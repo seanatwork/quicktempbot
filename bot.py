@@ -11,9 +11,15 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 def get_temperature(query: str) -> str:
     # Geocode using Nominatim (OpenStreetMap) — handles ZIP codes, cities, "city, state", etc.
     geo_url = "https://nominatim.openstreetmap.org/search"
+    
+    # If it's a 5-digit ZIP code, prefer US results
+    search_query = query
+    if query.isdigit() and len(query) == 5:
+        search_query = f"{query}, USA"
+    
     geo_resp = requests.get(
         geo_url,
-        params={"q": query, "format": "json", "limit": 1, "addressdetails": 1},
+        params={"q": search_query, "format": "json", "limit": 1, "addressdetails": 1},
         headers={"User-Agent": "quicktempbot/1.0"},
         timeout=10,
     )

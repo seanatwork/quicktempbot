@@ -9,21 +9,22 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 
 def get_temperature(query: str) -> str:
-    # Geocode the location (city, state, ZIP, etc.)
-    geo_url = "https://geocoding-api.open-meteo.com/v1/search"
-    geo_resp = requests.get(geo_url, params={"name": query, "count": 1}, timeout=10)
+    # Geocode using Nominatim (OpenStreetMap) — handles ZIP codes, cities, "city, state", etc.
+    geo_url = "https://nominatim.openstreetmap.org/search"
+    geo_resp = requests.get(
+        geo_url,
+        params={"q": query, "format": "json", "limit": 1, "addressdetails": 1},
+        headers={"User-Agent": "quicktempbot/1.0"},
+        timeout=10,
+    )
     geo_data = geo_resp.json()
 
-    results = geo_data.get("results")
-    if not results:
+    if not geo_data:
         return f'Could not find location: "{query}"'
 
-    loc = results[0]
-    lat, lon = loc["latitude"], loc["longitude"]
-    name = loc.get("name", query)
-    country = loc.get("country", "")
-    admin1 = loc.get("admin1", "")
-    label = ", ".join(filter(None, [name, admin1, country]))
+    loc = geo_data[0]
+    lat, lon = loc["lat"], loc["lon"]
+    label = loc.get("display_name", query)
 
     # Fetch current temperature
     weather_url = "https://api.open-meteo.com/v1/forecast"
